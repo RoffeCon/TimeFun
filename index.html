@@ -37,7 +37,10 @@
     --control-border: rgba(128, 128, 128, 0.40);
 
     --digital-font-size: clamp(2.2rem, 9vmin, 5.5rem);
-    --flip-card-height: 1.32em;
+    /* Höjden klockan får fylla. Hela rutan, utom där något reserverar ett band. */
+    --clock-room-height: 100vh;
+    --flip-card-height-em: 1.32;
+    --flip-card-height: calc(var(--flip-card-height-em) * 1em);
     /* Fasta mått i em gör radens totala bredd förutsägbar oavsett typsnitt:
        6 kort + 2 kolon + 7 mellanrum = 6,26 em. Utan dem beror bredden på
        hur bred just den siffran råkar vara i just det typsnittet. */
@@ -1070,7 +1073,20 @@
   }
 
   @media (max-height: 300px), (max-width: 260px) {
-    #app { padding: 4px; gap: 3px; }
+    :root {
+      --short-window-padding: 4px;
+      /* Nedräkningslappen slutar 24 px ner; resten är luft mot klockan */
+      --countdown-band-height: 28px;
+    }
+    #app { padding: var(--short-window-padding); gap: 3px; }
+
+    /* Klockan centreras annars i hela rutan och når ända upp till lappen i
+       hörnet — i ett Firefox-appfönster, där webbläsarraden äter höjd, kant i
+       kant eller bakom den. Lappen får därför ett eget band överst. */
+    body:has(#break-timer:not(.is-hidden)) #app {
+      padding-top: calc(var(--short-window-padding) + var(--countdown-band-height));
+      --clock-room-height: calc(100vh - 2 * var(--short-window-padding) - var(--countdown-band-height));
+    }
 
     /* Allt utom tiden bort. Nedräkningen och namnen kan läsas i stort läge. */
     #names, .style-dots, #wake-warning,
@@ -1090,7 +1106,10 @@
     #settings-button:hover, #settings-button:focus-visible { opacity: 1; }
 
     :root, #app.mode-digital { --digital-font-size: min(17vw, 52vmin); }
-    #app.mode-analog #clock-wrap { width: min(96vmin, 96vw); height: min(96vmin, 96vw); }
+    #app.mode-analog #clock-wrap {
+      width: min(96vmin, 96vw, var(--clock-room-height));
+      height: min(96vmin, 96vw, var(--clock-room-height));
+    }
 
 
     /* Panelerna måste ta hela rutan för att gå att använda alls */
@@ -1120,15 +1139,19 @@
     #app.mode-both #digital-wrap { display: none; }
     #app.mode-both #clock-wrap {
       display: block;
-      width: min(96vmin, 96vw);
-      height: min(96vmin, 96vw);
+      width: min(96vmin, 96vw, var(--clock-room-height));
+      height: min(96vmin, 96vw, var(--clock-room-height));
     }
   }
 
   /* Flip-raden är exakt så här många em bred, oavsett typsnitt. Bredden kan
      därför garanteras i förväg i stället för mätas i efterhand. */
   #digital-clock.style-flip {
-    font-size: min(var(--digital-font-size), calc((100vw - 16px) / var(--flip-row-width-em)));
+    font-size: min(
+      var(--digital-font-size),
+      calc((100vw - 16px) / var(--flip-row-width-em)),
+      calc(var(--clock-room-height) / var(--flip-card-height-em))
+    );
   }
 
   /* Installerad som app visar Chrome annars en titelrad med "Klockan". Med
@@ -1160,6 +1183,14 @@
      klockan centreras i hela rutan, och under ungefär 215 px höjd hamnar den
      bakom dem. Titelradens egen yta står tom, så de får flytta upp dit. */
   @media (display-mode: window-controls-overlay) and (max-height: 300px) {
+    /* Lappen ligger redan i titelradens band. Klockan får stå kvar mitt i
+       rutan, men inte så hög att den når upp i bandet — under ungefär 160 px
+       höjd hamnade första kortet annars under lappen. */
+    body:has(#break-timer:not(.is-hidden)) #app {
+      padding-top: var(--short-window-padding);
+      --clock-room-height: calc(100vh - 2 * env(titlebar-area-height, 32px));
+    }
+
     #break-timer, #settings-button {
       /* Dragytan ligger på --layer-toast och skulle annars äta både klick och
          synlighet. Undantaget måste sättas på elementen, annars går kugghjulet

@@ -9,7 +9,7 @@
    då fastnar plattan på gamla filer utan att något syns.
    ========================================================================== */
 
-const CACHE_VERSION = "klockan-v9";
+const CACHE_VERSION = "klockan-v10";
 const APP_START_PAGE = "./index.html";
 
 /* Filer som ska finnas i cachen direkt vid installationen. */
